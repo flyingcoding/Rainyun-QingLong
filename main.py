@@ -9,6 +9,30 @@ from dataclasses import dataclass
 from importlib import metadata
 from typing import Any, List, Dict
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
+
+required_local_files = [
+    "config.py",
+    "account_parser.py",
+    "api_client.py",
+    "server_manager.py",
+    "captcha.py",
+]
+missing_local_files = [
+    filename
+    for filename in required_local_files
+    if not os.path.exists(os.path.join(SCRIPT_DIR, filename))
+]
+if missing_local_files:
+    print(f"❌ 脚本目录缺少必要文件: {', '.join(missing_local_files)}", file=sys.stderr)
+    print(f"   当前脚本目录: {SCRIPT_DIR}", file=sys.stderr)
+    print("   常见原因：青龙订阅“白名单”仅拉取了 main.py，导致其他模块未同步。", file=sys.stderr)
+    print("   请在 订阅管理 中将“白名单”改为：main|config|account_parser|api_client|server_manager|captcha|stealth", file=sys.stderr)
+    print("   并确保“文件后缀”包含：py、js；然后重新运行订阅/更新脚本。", file=sys.stderr)
+    sys.exit(1)
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait

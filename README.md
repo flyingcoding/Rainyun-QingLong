@@ -79,7 +79,8 @@ pip3 install --no-cache-dir --force-reinstall ddddocr==1.5.6
 |------|---------|
 | 名称 | `雨云签到` |
 | 链接 | `https://github.com/你的用户名/Rainyun-QingLong.git` |
-| 白名单 | `main` |
+| 白名单 | `main|config|account_parser|api_client|server_manager|captcha|stealth`（不要只填 `main`，否则只会同步 `main.py`） |
+| 文件后缀 | `py|js` |
 | 定时规则 | `0 2 * * *`（每天凌晨2点更新） |
 | 分支 | `main` |
 
