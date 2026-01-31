@@ -6,9 +6,9 @@ import time
 import tempfile
 import shutil
 from dataclasses import dataclass
-from typing import List, Dict
+from importlib import metadata
+from typing import Any, List, Dict
 
-import ddddocr
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -48,14 +48,47 @@ class RuntimeContext:
     """运行时上下文"""
     driver: webdriver.Chrome
     wait: WebDriverWait
-    ocr: ddddocr.DdddOcr
-    det: ddddocr.DdddOcr
+    ocr: Any
+    det: Any
     temp_dir: str
     config: dict
     
     def temp_path(self, filename: str) -> str:
         """获取临时文件路径"""
         return os.path.join(self.temp_dir, filename)
+
+
+def get_ddddocr_version() -> str:
+    """获取已安装的 ddddocr 版本（无需 import 模块）"""
+    try:
+        return metadata.version("ddddocr")
+    except metadata.PackageNotFoundError:
+        return "未安装"
+    except Exception:
+        return "未知"
+
+
+def init_ddddocr() -> tuple[Any, Any]:
+    """初始化 ddddocr（导入失败时给出可操作的修复建议）"""
+    try:
+        import ddddocr  # type: ignore
+    except Exception as e:
+        installed = get_ddddocr_version()
+        logger.error(f"❌ ddddocr 导入失败（当前版本: {installed}）: {e}")
+        logger.error("建议在青龙容器终端执行以下任一方案：")
+        logger.error("  方案A（推荐）：pip3 install --no-cache-dir --force-reinstall ddddocr")
+        logger.error("  方案B（仍失败再试）：pip3 install --no-cache-dir --force-reinstall ddddocr==1.5.6")
+        raise RuntimeError("ddddocr 导入失败，无法进行验证码识别") from e
+
+    try:
+        ocr = ddddocr.DdddOcr(ocr=True, show_ad=False)
+        det = ddddocr.DdddOcr(det=True, show_ad=False)
+        return ocr, det
+    except Exception as e:
+        installed = get_ddddocr_version()
+        logger.error(f"❌ ddddocr 初始化失败（当前版本: {installed}）: {e}")
+        logger.error("请检查依赖是否完整（onnxruntime/opencv 等），或尝试方案A/B重新安装。")
+        raise RuntimeError("ddddocr 初始化失败，无法进行验证码识别") from e
 
 
 def init_logger():
@@ -349,9 +382,13 @@ def sign_in_rainyun(account: Account, config: dict) -> AccountResult:
         
         # 初始化组件
         logger.info("🔧 初始化 ddddocr 验证码识别库")
-        ocr = ddddocr.DdddOcr(ocr=True, show_ad=False)
-        det = ddddocr.DdddOcr(det=True, show_ad=False)
-        logger.info("✅ ddddocr 初始化成功")
+        try:
+            ocr, det = init_ddddocr()
+            logger.info("✅ ddddocr 初始化成功")
+        except RuntimeError as e:
+            result.error_msg = str(e)
+            logger.error(f"❌ {e}")
+            return result
         
         driver = init_selenium(config)
         inject_stealth_js(driver, config)

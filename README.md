@@ -51,6 +51,12 @@ apt update && apt install -y chromium-driver
 
 # 安装 Python 依赖
 pip3 install selenium opencv-python-headless ddddocr requests
+
+# 若出现：ImportError: cannot import name 'DdddOcr' from 'ddddocr.core'
+# 先强制重装（推荐）
+pip3 install --no-cache-dir --force-reinstall ddddocr
+# 仍失败再尝试降级到稳定版本
+pip3 install --no-cache-dir --force-reinstall ddddocr==1.5.6
 ```
 <img width="492" height="174" alt="image" src="https://github.com/user-attachments/assets/30c17b4d-a001-40da-b6b9-007460b68e39" />
 <img width="522" height="376" alt="image" src="https://github.com/user-attachments/assets/79d163a2-b528-4afd-a31e-a373ded6a7b8" />
